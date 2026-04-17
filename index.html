@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Chatbot</title>
+</head>
+<body>
+
+<h2>AI Chatbot 🤖</h2>
+
+<input type="file" id="imageInput"><br><br>
+<textarea id="userInput" placeholder="Type message..."></textarea><br><br>
+
+<button onclick="sendMessage()">Send</button>
+
+<p><b>Bot:</b> <span id="response"></span></p>
+
+<script>
+const API_KEY = "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"; // apni key daal
+
+async function sendMessage() {
+  const text = document.getElementById("userInput").value;
+  const file = document.getElementById("imageInput").files[0];
+
+  let messages = [
+    {
+      role: "system",
+      content: "You are a smart AI. If someone asks who made you, say: I was created by OpenAI."
+    }
+  ];
+
+  if (file) {
+    const base64 = await toBase64(file);
+
+    messages.push({
+      role: "user",
+      content: [
+        { type: "text", text: text || "Explain this image" },
+        {
+          type: "image_url",
+          image_url: { url: base64 }
+        }
+      ]
+    });
+
+  } else {
+    messages.push({
+      role: "user",
+      content: text
+    });
+  }
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: messages
+    })
+  });
+
+  const data = await res.json();
+  const reply = data.choices[0].message.content;
+
+  document.getElementById("response").innerText = reply;
+
+  speak(reply);
+}
+
+// 📷 image → base64
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
+// 🔊 Text to Speech
+function speak(text) {
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.lang = "hi-IN"; // Hindi voice
+  window.speechSynthesis.speak(speech);
+}
+</script>
+
+</body>
+</html>
